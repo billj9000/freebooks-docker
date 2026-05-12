@@ -8,7 +8,7 @@ services:
   php-app:
     build: ./php-app  # Builds the PHP app Docker image from the ./php-app directory
     ports:
-      - "8085:80"  # Maps port 8085 on the host to port 80 in the container
+      - "80:80"
     depends_on:
       - db  # Ensures MySQL starts before the PHP app
     environment:
