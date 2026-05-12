@@ -1,0 +1,59 @@
+networks:
+  db:
+    driver: bridge
+
+# TODO: Add Cron (either here or in dockerfile?)
+
+services:
+  php-app:
+    build: ./php-app  # Builds the PHP app Docker image from the ./php-app directory
+    ports:
+      - "8085:80"  # Maps port 8085 on the host to port 80 in the container
+    depends_on:
+      - db  # Ensures MySQL starts before the PHP app
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - config:/var/www/html/config/
+      - my_files:/var/www/html/my_files/
+    networks:
+      db:
+
+
+  db: # N.B. THIS is the database SERVER name
+    image: mariadb:10.6
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    # Disable "strict" mode (the default)
+    command: mysqld --sql_mode="" #--character-set-server=utf8 --collation-server=utf8_slovenian_ci --init-connect='SET NAMES UTF8;' --innodb-flush-log-at-trx-commit=0
+    ports:
+      - "33060:3306"
+    volumes:
+      - mariadb:/var/lib/mysql
+    networks:
+      db:
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    expose:
+      - "40002"
+    ports:
+      - "40002:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+    networks:
+      db:
+
+volumes:
+  mariadb:  # Declares a named volume for MySQL data persistence
+  config:   # Persists configure.php across container rebuilds (symlinked from includes/)
+  my_files: # Persists company configs and uploaded files across container rebuilds
