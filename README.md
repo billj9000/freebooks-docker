@@ -82,7 +82,9 @@ Database and company data are stored in Docker volumes and are preserved across 
 
 ## Post-install security
 
-After completing installation, restrict access to the install directory to prevent re-installation:
+After completing installation, **remove the `install/` directory**. Leaving it accessible allows anyone to re-initialise the database.
+
+The installer will refuse to run if it detects the application is already configured, but the directory should still be removed:
 
 ```bash
 docker compose exec php-app rm -rf /var/www/html/install

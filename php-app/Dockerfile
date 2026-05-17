@@ -15,7 +15,6 @@ RUN a2enmod rewrite
 #COPY * .
 #COPY ckeditor/ ./ckeditor/
 #COPY includes/ ./includes/
-#COPY install/ ./install/
 #COPY modules/ ./modules/
 #COPY my_files/ ./my_files/
 #COPY soap/ ./soap/
