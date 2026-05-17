@@ -1,8 +1,9 @@
 # Use the official PHP image
-FROM php:5.6-apache
+FROM php:8.3-apache
 
-# Install MySQL extensions: pdo_mysql for PDO and mysql for legacy mysql_* functions in query_factory.php
-RUN docker-php-ext-install pdo pdo_mysql mysql
+# Install MySQL, zip, and bzip2 extensions
+RUN apt-get update && apt-get install -y libbz2-dev libzip-dev && rm -rf /var/lib/apt/lists/*
+RUN docker-php-ext-install pdo pdo_mysql zip bz2
 
 # Set the working directory
 WORKDIR /var/www/html
@@ -20,6 +21,10 @@ RUN a2enmod rewrite
 #COPY soap/ ./soap/
 #COPY themes/ ./themes/
 COPY . .
+
+# Install Composer and PHP dependencies
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install --no-dev --no-interaction --optimize-autoloader
 
 # Set upload_tmp_dir explicitly so the installer's ini_get() check passes
 RUN echo "upload_tmp_dir = /tmp" > /usr/local/etc/php/conf.d/uploads.ini
