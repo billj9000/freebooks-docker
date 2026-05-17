@@ -22,7 +22,7 @@ RUN a2enmod rewrite
 #COPY themes/ ./themes/
 COPY . .
 
-# Install Composer and PHP dependencies
+# Install Composer dependencies (PHPMailer 7)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --no-interaction --optimize-autoloader
 

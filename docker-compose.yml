@@ -24,7 +24,7 @@ services:
 
 
   db: # N.B. THIS is the database SERVER name
-    image: mariadb:10.6
+    image: mariadb:11.4
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -32,7 +32,7 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     # Disable "strict" mode (the default)
-    command: mysqld --sql_mode="" #--character-set-server=utf8 --collation-server=utf8_slovenian_ci --init-connect='SET NAMES UTF8;' --innodb-flush-log-at-trx-commit=0
+    command: mariadbd --sql_mode="" #--character-set-server=utf8 --collation-server=utf8_slovenian_ci --init-connect='SET NAMES UTF8;' --innodb-flush-log-at-trx-commit=0
     ports:
       - "33060:3306"
     volumes:
@@ -54,6 +54,12 @@ services:
       db:
 
 volumes:
-  mariadb:  # Declares a named volume for MySQL data persistence
-  config:   # Persists configure.php across container rebuilds (symlinked from includes/)
-  my_files: # Persists company configs and uploaded files across container rebuilds
+  mariadb:
+    external: true
+    name: freebooks_mariadb  # existing data volume from previous project
+  config:
+    external: true
+    name: freebooks_config   # existing configure.php volume
+  my_files:
+    external: true
+    name: freebooks_my_files # existing company data volume
