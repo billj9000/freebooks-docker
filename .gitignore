@@ -2,3 +2,5 @@
 # Application source — copied from freebooks/trunk by the user (see README)
 php-app/*
 !php-app/Dockerfile
+!php-app/cron/
+!php-app/cron/crontab

@@ -1,0 +1,10 @@
+MAILTO=""
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# FreeBooks scheduled tasks
+# Output is written to stdout so it appears in: docker logs freebooks-docker-cron-1
+#
+# ZenCart synchronisation — uncomment when the extension is implemented.
+# */15 * * * * www-data php /var/www/html/cron/zencart_sync.php >> /proc/1/fd/1 2>&1
+

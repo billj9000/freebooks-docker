@@ -2,7 +2,7 @@
 FROM php:8.3-apache
 
 # Install MySQL, zip, and bzip2 extensions
-RUN apt-get update && apt-get install -y libbz2-dev libzip-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libbz2-dev libzip-dev cron && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install pdo pdo_mysql zip bz2
 
 # Set the working directory
@@ -38,6 +38,10 @@ RUN mkdir /var/www/html/config && \
 # Allow the web server to write into includes/ and my_files/
 RUN chown www-data:www-data includes/ my_files/
 # Expose port 80
+# Install crontab (used by the cron service in docker-compose.yml)
+COPY cron/crontab /etc/cron.d/freebooks
+RUN chmod 0644 /etc/cron.d/freebooks
+
 EXPOSE 80
 
 
