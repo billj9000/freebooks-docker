@@ -516,47 +516,15 @@ foreach ($zc_orders as $zc) {
         ];
     }
 
-    // Add shipping as a line item so FreeBooks applies the correct per-order VAT rate.
-    // FreeBooks' built-in freight mechanism uses a single fixed constant
-    // (AR_ADD_SALES_TAX_TO_SHIPPING) which cannot vary per order — inadequate for UK/EU VAT
-    // where shipping is taxed at the rate of the goods being shipped.
-    if ($ship_item !== null) {
-        // ZenCart's orders_total.value for ot_shipping is already ex-VAT (ZenCart stores the
-        // base shipping cost; ot_tax adds the tax separately). Pass it straight through.
-        $ship_ex_vat = round((float)($ship_item['unitPrice'] ?? 0), 8);
-        $ship_pct    = (float)($ship_item['tax'] ?? 0);
-        $ship_tax_id = $zc_tax_id($ship_pct);
-        $ship_cnt    = count($item_rows) + 1;
-        $item_rows[] = [
-            'id'                     => '',
-            'so_po_item_ref_id'      => '',
-            'item_cnt'               => $ship_cnt,
-            'gl_type'                => GL_TYPE,
-            'sku'                    => '',
-            'qty'                    => 1,
-            'pstd'                   => 0,
-            'desc'                   => (string)($ship_item['name'] ?? 'Shipping'),
-            'proj'                   => '',
-            'purch_package_quantity' => 1,
-            'date_1'                 => '',
-            'price'                  => $ship_ex_vat,
-            'full'                   => $ship_ex_vat,
-            'acct'                   => AR_DEF_FREIGHT_ACCT,
-            'tax'                    => $ship_tax_id,
-            'total'                  => $ship_ex_vat,
-            'weight'                 => 0,
-            'serial'                 => '',
-            'stock'                  => '',
-            'inactive'               => '0',
-            'lead_time'              => 0,
-        ];
-    }
+    // Shipping goes into the Freight field. Tax rate is derived from ZenCart's shipping tax %,
+    // mapped to a FreeBooks tax rate ID via the same lookup used for product lines.
+    // ZenCart's ot_shipping value is already ex-VAT.
+    $ship_ex_vat         = ($ship_item !== null) ? round((float)($ship_item['unitPrice'] ?? 0), 8) : 0.0;
+    $ship_freight_tax_id = ($ship_item !== null) ? $zc_tax_id((float)($ship_item['tax'] ?? 0)) : 0;
 
     // disc_percent: with ENABLE_ORDER_DISCOUNT=1 and AR_TAX_BEFORE_DISCOUNT=0, FreeBooks
     // multiplies each taxable line total by (1 - disc_percent) before computing tax.
-    // Setting it to discount / all_line_totals makes FreeBooks produce the same post-discount
-    // tax as ZenCart — including for the shipping line, because the same fraction is applied
-    // to everything, which exactly offsets the discount being deducted from the AR total.
+    // Freight is excluded from discount (FreeBooks never applies disc_percent to frt rows).
     $_all_line_totals = array_sum(array_column($item_rows, 'total'));
     $disc_percent = ($discount > 0.0 && $_all_line_totals > 0.0)
         ? $discount / $_all_line_totals
@@ -580,6 +548,18 @@ foreach ($zc_orders as $zc) {
             }
         }
     }
+    // Freight tax is not discounted
+    if ($ship_ex_vat > 0.0 && $ship_freight_tax_id > 0) {
+        foreach ($zc_tax_rates as $_rate) {
+            if ($_rate['id'] == $ship_freight_tax_id) {
+                foreach (explode(':', $_rate['auths']) as $_auth) {
+                    $_auth_totals[$_auth] = ($_auth_totals[$_auth] ?? 0.0)
+                        + ($zc_tax_auths[$_auth]['tax_rate'] / 100) * $ship_ex_vat;
+                }
+                break;
+            }
+        }
+    }
     $_dec = $currencies->currencies[$zc_currency]['decimal_places'] ?? $currencies->currencies[DEFAULT_CURRENCY]['decimal_places'];
     $_fb_tax = 0.0;
     foreach ($_auth_totals as $_a => $_t) {
@@ -588,7 +568,7 @@ foreach ($zc_orders as $zc) {
             : $_t;
     }
     $_fb_total = round(
-        array_sum(array_column($item_rows, 'total')) + $_fb_tax - $discount,
+        array_sum(array_column($item_rows, 'total')) + $ship_ex_vat + $_fb_tax - $discount,
         2
     );
     $_rounding = round($zc_paid - $_fb_total, 2);
@@ -666,7 +646,8 @@ foreach ($zc_orders as $zc) {
     $order->period        = $period;
     $order->purch_order_id = $po_ref;
     $order->description   = $desc;
-    $order->freight          = 0;  // shipping is added as a taxed line item above
+    $order->freight          = $ship_ex_vat;
+    $order->freight_tax_id   = $ship_freight_tax_id;
     $order->discount         = $discount;
     $order->disc_percent     = $disc_percent;
     $order->currencies_code  = $zc_currency;
@@ -744,7 +725,8 @@ foreach ($zc_orders as $zc) {
         $invoice->period             = $period;
         $invoice->purch_order_id     = '';  // auto-assigned invoice number
         $invoice->description        = $desc;
-        $invoice->freight            = 0;  // shipping is a taxed line item in inv_rows
+        $invoice->freight            = $ship_ex_vat;
+        $invoice->freight_tax_id     = $ship_freight_tax_id;
         $invoice->discount           = $discount;
         $invoice->disc_percent       = $disc_percent;
         $invoice->currencies_code    = $order->currencies_code;

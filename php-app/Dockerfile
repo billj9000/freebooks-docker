@@ -39,7 +39,7 @@ RUN mkdir /var/www/html/config && \
 RUN chown www-data:www-data includes/ my_files/
 # Expose port 80
 # Install crontab (used by the cron service in docker-compose.yml)
-COPY cron/crontab /etc/cron.d/freebooks
+COPY --chown=root:root cron/crontab /etc/cron.d/freebooks
 RUN chmod 0644 /etc/cron.d/freebooks
 
 EXPOSE 80

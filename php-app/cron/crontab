@@ -6,8 +6,8 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 # Output is written to stdout so it appears in: docker logs freebooks-docker-cron-1
 #
 # ZenCart order import — runs every 15 minutes. Set FREEBOOKS_COMPANY or pass company as arg.
-*/15 * * * * www-data php /var/www/html/cron/zencart_sync.php >> /proc/1/fd/1 2>&1
+*/15 * * * * root php /var/www/html/cron/zencart_sync.php >> /proc/1/fd/1 2>&1
 
 # Currency rate update — runs daily at 1:00am from ECB feed.
-0 1 * * * www-data php /var/www/html/cron/update_currency_rates.php >> /proc/1/fd/1 2>&1
+0 1 * * * root php /var/www/html/cron/update_currency_rates.php >> /proc/1/fd/1 2>&1
 
