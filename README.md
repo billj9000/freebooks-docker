@@ -67,6 +67,40 @@ After installation completes, navigate to http://localhost and log in with the a
 | phpMyAdmin | http://localhost:40002     | DB admin interface                 |
 | MariaDB    | localhost:33060            | Direct DB access (e.g. from host)  |
 
+## HTTPS with Traefik
+
+If Traefik is running as an SSL-terminating reverse proxy, remove the direct port binding from `php-app` and add Traefik labels instead. Traefik must be on a Docker network shared with this stack — adjust the network name to match your Traefik setup.
+
+In `docker-compose.yml`, replace the `ports` entry on `php-app`:
+
+```yaml
+services:
+  php-app:
+    # Remove:  ports: ["80:80"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.freebooks.rule=Host(`your.domain.com`)"
+      - "traefik.http.routers.freebooks.entrypoints=websecure"
+      - "traefik.http.routers.freebooks.tls=true"
+    networks:
+      - db
+      - traefik        # shared network Traefik listens on
+
+networks:
+  db:
+    driver: bridge
+  traefik:
+    external: true     # must already exist; created by your Traefik stack
+```
+
+After installing FreeBooks, update `ENABLE_SSL_ADMIN` in `trunk/includes/configure.php` (inside the container volume) from `'false'` to `'true'`:
+
+```php
+define('ENABLE_SSL_ADMIN', 'true');
+```
+
+This tells FreeBooks to set the `Secure` flag on all cookies and to generate `https://` links. Without it, cookies are issued without `Secure` even when the browser is connecting over HTTPS.
+
 ## Updating the application
 
 Pull the latest FreeBooks source and rebuild:
