@@ -245,13 +245,22 @@ function zc_country_3(string $raw): string {
         $iso3 = gen_get_country_iso_3_from_2($raw, $countries);
         return ($iso3 !== $raw) ? $iso3 : COMPANY_COUNTRY;
     }
-    // Full country name — not supported; use company default
+    // Full country name — search by name
+    foreach ($countries->country as $c) {
+        if (strcasecmp((string)$c->name, $raw) === 0) return (string)$c->iso3;
+    }
     return COMPANY_COUNTRY;
 }
 
 // ─── Helper: normalize an address field string (trim + collapse whitespace) ───
 function zc_addr(string $s): string {
     return trim(preg_replace('/\s+/', ' ', $s));
+}
+
+// ─── Helper: normalize a state/province field, stripping dropdown placeholders ─
+function zc_state(string $s): string {
+    $s = zc_addr($s);
+    return ($s === 'Please select...' || $s === '--') ? '' : $s;
 }
 
 // ─── Helper: create a FreeBooks customer contact from ZenCart address data ────
@@ -293,9 +302,9 @@ function zc_create_customer(array $bill, string $email, string $date): array
         'address1'       => substr(zc_addr((string)($bill['addr1']      ?? '')), 0, 32),
         'address2'       => substr(zc_addr((string)($bill['addr2']      ?? '')), 0, 32),
         'city_town'      => substr(zc_addr((string)($bill['city']       ?? '')), 0, 24),
-        'state_province' => substr(zc_addr((string)($bill['state']      ?? '')), 0, 24),
+        'state_province' => substr(zc_state((string)($bill['state']      ?? '')), 0, 24),
         'postal_code'    => substr(zc_addr((string)($bill['postalCode'] ?? '')), 0, 10),
-        'country_code'   => zc_country_3($bill['countryCode'] ?? $bill['country'] ?? ''),
+        'country_code'   => zc_country_3($bill['countryCode'] ?: ($bill['country'] ?? '')),
         'telephone1'     => substr(zc_addr((string)($bill['phone']      ?? '')), 0, 20),
         'email'          => substr($email, 0, 48),
     ];
@@ -445,15 +454,12 @@ foreach ($zc_orders as $zc) {
         echo ts() . " Created customer contact $acct_id for '$email'\n";
     }
 
-    // Separate items: products / shipping / coupon discount
-    $discount     = 0.0;
-    $items        = [];
-    $ship_item    = null;
+    // Separate items: products / coupon discount
+    $discount = 0.0;
+    $items    = [];
     foreach ($zc['items'] ?? [] as $item) {
         $sku = (string)($item['sku'] ?? '');
-        if ($sku === 'Shipping') {
-            $ship_item = $item; // handled below as a taxed line item
-        } elseif ($sku === 'Discount') {
+        if ($sku === 'Discount') {
             $discount += abs((float)($item['unitPrice'] ?? 0));
         } else {
             $items[] = $item;
@@ -519,11 +525,9 @@ foreach ($zc_orders as $zc) {
         ];
     }
 
-    // Shipping goes into the Freight field. Tax rate is derived from ZenCart's shipping tax %,
-    // mapped to a FreeBooks tax rate ID via the same lookup used for product lines.
-    // ZenCart's ot_shipping value is already ex-VAT.
-    $ship_ex_vat         = ($ship_item !== null) ? round((float)($ship_item['unitPrice'] ?? 0), 8) : 0.0;
-    $ship_freight_tax_id = ($ship_item !== null) ? $zc_tax_id((float)($ship_item['tax'] ?? 0)) : 0;
+    // Shipping goes into the Freight field. shippingAmount is ex-VAT; shippingTax is the %.
+    $ship_ex_vat         = round((float)($zc['shippingAmount'] ?? 0), 8);
+    $ship_freight_tax_id = $zc_tax_id((float)($zc['shippingTax'] ?? 0));
 
     // disc_percent: with ENABLE_ORDER_DISCOUNT=1 and AR_TAX_BEFORE_DISCOUNT=0, FreeBooks
     // multiplies each taxable line total by (1 - disc_percent) before computing tax.
@@ -626,9 +630,9 @@ foreach ($zc_orders as $zc) {
     $order->bill_address1       = zc_addr((string)($bill['addr1']      ?? ''));
     $order->bill_address2       = zc_addr((string)($bill['addr2']      ?? ''));
     $order->bill_city_town      = zc_addr((string)($bill['city']       ?? ''));
-    $order->bill_state_province = zc_addr((string)($bill['state']      ?? ''));
+    $order->bill_state_province = zc_state((string)($bill['state']      ?? ''));
     $order->bill_postal_code    = zc_addr((string)($bill['postalCode'] ?? ''));
-    $order->bill_country_code   = zc_country_3($bill['countryCode'] ?? $bill['country'] ?? '');
+    $order->bill_country_code   = zc_country_3($bill['countryCode'] ?: ($bill['country'] ?? ''));
     $order->bill_telephone1     = zc_addr((string)($zc['phone']        ?? ''));
     $order->bill_email          = $email;
 
@@ -639,9 +643,9 @@ foreach ($zc_orders as $zc) {
     $order->ship_address1       = zc_addr((string)($ship['addr1']      ?? ''));
     $order->ship_address2       = zc_addr((string)($ship['addr2']      ?? ''));
     $order->ship_city_town      = zc_addr((string)($ship['city']       ?? ''));
-    $order->ship_state_province = zc_addr((string)($ship['state']      ?? ''));
+    $order->ship_state_province = zc_state((string)($ship['state']      ?? ''));
     $order->ship_postal_code    = zc_addr((string)($ship['postalCode'] ?? ''));
-    $order->ship_country_code   = zc_country_3($ship['countryCode'] ?? $ship['country'] ?? '');
+    $order->ship_country_code   = zc_country_3($ship['countryCode'] ?: ($ship['country'] ?? ''));
     $order->ship_telephone1     = $order->bill_telephone1;
     $order->ship_email          = $order->bill_email;
 
