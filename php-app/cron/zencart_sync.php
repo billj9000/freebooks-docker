@@ -155,6 +155,9 @@ if (file_exists(DIR_FS_MODULES . 'zencart/language/' . $_SESSION['language'] . '
     require_once(DIR_FS_MODULES . 'zencart/language/' . $_SESSION['language'] . '/language.php');
 }
 
+// Inventory helpers (inv_calculate_prices used by zencart::syncQuantities/uploadProduct)
+require_once(DIR_FS_MODULES . 'inventory/functions/inventory.php');
+
 // PhreeBooks journal classes and helpers
 require_once(DIR_FS_MODULES . 'phreebooks/classes/gen_ledger.php');
 require_once(DIR_FS_MODULES . 'phreebooks/classes/orders.php');
