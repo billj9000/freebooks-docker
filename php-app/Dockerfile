@@ -2,8 +2,8 @@
 FROM php:8.3-apache
 
 # Install MySQL, zip, and bzip2 extensions
-RUN apt-get update && apt-get install -y libbz2-dev libzip-dev cron && rm -rf /var/lib/apt/lists/*
-RUN docker-php-ext-install pdo pdo_mysql zip bz2
+RUN apt-get update && apt-get install -y libbz2-dev libzip-dev libpng-dev libjpeg-dev cron && rm -rf /var/lib/apt/lists/*
+RUN docker-php-ext-configure gd --with-jpeg && docker-php-ext-install pdo pdo_mysql zip bz2 gd
 
 # Set the working directory
 WORKDIR /var/www/html
@@ -27,6 +27,8 @@ RUN composer install --no-dev --no-interaction --optimize-autoloader
 
 # Set upload_tmp_dir explicitly so the installer's ini_get() check passes
 RUN echo "upload_tmp_dir = /tmp" > /usr/local/etc/php/conf.d/uploads.ini
+# Phreeform report editor submits large forms; raise the input variable limit
+RUN echo "max_input_vars = 5000" > /usr/local/etc/php/conf.d/input_vars.ini
 # Ensure PHP errors are always logged and displayed regardless of runtime ini_set
 RUN echo "display_errors = Off\nerror_reporting = E_ALL & ~E_NOTICE\nlog_errors = On\nerror_log = /var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/errors.ini
 # Store configure.php in a dedicated volume directory and symlink it into includes/.
