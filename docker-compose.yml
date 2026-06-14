@@ -62,8 +62,6 @@ services:
   phpmyadmin:
     image: phpmyadmin
     restart: always
-    expose:
-      - "40002"
     ports:
       - "40002:80"
     environment:
