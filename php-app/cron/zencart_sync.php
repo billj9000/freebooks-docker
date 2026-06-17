@@ -326,6 +326,43 @@ function zc_drain_messages(): string
     return implode('; ', array_filter($parts));
 }
 
+// ─── Circuit breaker: exponential back-off after repeated API failures ────────
+// Prevents hammering the server after transient outages and avoids triggering
+// cPHulk brute-force protection from rapid successive failed requests.
+// State is kept in a JSON file; the back-off doubles with each consecutive
+// failure (1 min → 2 → 4 → 8 → 16 → 32 → 60 min max).
+$_cb_file = '/tmp/zencart_sync_backoff';
+
+function cb_read(): array {
+    global $_cb_file;
+    if (!file_exists($_cb_file)) return ['failures' => 0, 'last_failure' => 0];
+    $d = json_decode(@file_get_contents($_cb_file), true);
+    return is_array($d) ? $d : ['failures' => 0, 'last_failure' => 0];
+}
+function cb_record_failure(): void {
+    global $_cb_file;
+    $d = cb_read();
+    $d['failures']++;
+    $d['last_failure'] = time();
+    file_put_contents($_cb_file, json_encode($d));
+}
+function cb_reset(): void {
+    global $_cb_file;
+    if (file_exists($_cb_file)) @unlink($_cb_file);
+}
+
+$_cb = cb_read();
+if ($_cb['failures'] > 0) {
+    $backoff = min(3600, 60 * (2 ** ($_cb['failures'] - 1)));
+    $elapsed = time() - $_cb['last_failure'];
+    if ($elapsed < $backoff) {
+        $wait = $backoff - $elapsed;
+        echo ts() . " Skipping: backing off for {$wait}s after {$_cb['failures']} consecutive failure(s).\n";
+        exit(0);
+    }
+}
+unset($_cb);
+
 // ─── Fetch new orders from ZenCart ───────────────────────────────────────────
 if (!defined('ZENCART_URL') || ZENCART_URL === 'https://') {
     echo ts() . " ZenCart not configured (ZENCART_URL unset). Exiting.\n";
@@ -336,9 +373,11 @@ $last_order = (int)(defined('ZENCART_LAST_ORDER') ? ZENCART_LAST_ORDER : 0);
 $response   = zencart_api_call('orders', null, ['last_order' => $last_order]);
 
 if ($response === false) {
+    cb_record_failure();
     fwrite(STDERR, ts() . " Failed to fetch orders from ZenCart: " . zc_drain_messages() . "\n");
     exit(1);
 }
+cb_reset();
 
 $zc_orders = $response['orders'] ?? [];
 if (empty($zc_orders)) {
@@ -656,6 +695,12 @@ foreach ($zc_orders as $zc) {
     $order->freight          = $ship_ex_vat;
     $order->freight_tax_id   = $ship_freight_tax_id;
     $order->discount         = $discount;
+    $zc_ship_mod  = trim((string)($zc['shippingModule'] ?? ''));
+    $zc_ship_desc = trim((string)($zc['shippingMethod'] ?? ''));
+    $shipping = zencart_resolve_shipping($zc_ship_mod, $zc_ship_desc);
+    $order->shipper_code = $shipping['module'] !== ''
+        ? $shipping['module'] . ':' . $shipping['service']
+        : '';
     $order->disc_percent     = $disc_percent;
     $order->currencies_code  = $zc_currency;
     $order->currencies_value = $zc_conv_rate;
@@ -736,6 +781,7 @@ foreach ($zc_orders as $zc) {
         $invoice->freight_tax_id     = $ship_freight_tax_id;
         $invoice->discount           = $discount;
         $invoice->disc_percent       = $disc_percent;
+        $invoice->shipper_code       = $order->shipper_code;
         $invoice->currencies_code    = $order->currencies_code;
         $invoice->currencies_value   = $order->currencies_value;
         $invoice->rep_id             = $order->rep_id;
