@@ -39,11 +39,14 @@ RUN mkdir /var/www/html/config && \
     ln -s /var/www/html/config/configure.php /var/www/html/includes/configure.php
 # Allow the web server to write into includes/ and my_files/
 RUN chown www-data:www-data includes/ my_files/
-# Expose port 80
-# Install crontab (used by the cron service in docker-compose.yml)
+# Install crontab and the entrypoint that runs cron alongside Apache in this container
 COPY --chown=root:root cron/crontab /etc/cron.d/freebooks
 RUN chmod 0644 /etc/cron.d/freebooks
+COPY --chown=root:root cron/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
+# Expose port 80
 EXPOSE 80
 
 

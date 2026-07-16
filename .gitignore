@@ -4,3 +4,5 @@ php-app/*
 !php-app/Dockerfile
 !php-app/cron/
 !php-app/cron/crontab
+!php-app/cron/entrypoint.sh
+php-app/cron/*.php

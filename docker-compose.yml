@@ -22,26 +22,6 @@ services:
     networks:
       db:
 
-
-  cron:
-    build: ./php-app
-    command: ["cron", "-f"]
-    depends_on:
-      - db
-    environment:
-      DB_HOST: db
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - config:/var/www/html/config/
-      - my_files:/var/www/html/my_files/
-    networks:
-      db:
-    restart: unless-stopped
-
   db: # N.B. THIS is the database SERVER name
     image: mariadb:11.4
     restart: always
