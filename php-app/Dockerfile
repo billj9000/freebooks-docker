@@ -39,6 +39,12 @@ RUN mkdir /var/www/html/config && \
     ln -s /var/www/html/config/configure.php /var/www/html/includes/configure.php
 # Allow the web server to write into includes/ and my_files/
 RUN chown www-data:www-data includes/ my_files/
+# Stash pristine copies of config/ and my_files/ so a single volume can be
+# seeded with them on first boot on platforms that only support one volume
+# mount per instance (see entrypoint.sh) — Docker Compose doesn't need these,
+# it mounts config/ and my_files/ directly as separate volumes.
+RUN cp -a /var/www/html/config /var/www/html/.defaults-config && \
+    cp -a /var/www/html/my_files /var/www/html/.defaults-my_files
 # Install crontab and the entrypoint that runs cron alongside Apache in this container
 COPY --chown=root:root cron/crontab /etc/cron.d/freebooks
 RUN chmod 0644 /etc/cron.d/freebooks

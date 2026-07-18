@@ -67,6 +67,10 @@ After installation completes, navigate to http://localhost and log in with the a
 | phpMyAdmin | http://localhost:40002     | DB admin interface                 |
 | MariaDB    | localhost:33060            | Direct DB access (e.g. from host)  |
 
+## Deploying to Fly.io
+
+For a managed, container-native deployment with automatic HTTPS (no Traefik/reverse-proxy setup needed), see [FLY.md](FLY.md). It uses the `fly.toml` configs already in this repo (`php-app/fly.toml`, `fly/db.toml`, `fly/pma.toml`).
+
 ## HTTPS with Traefik
 
 If Traefik is running as an SSL-terminating reverse proxy, remove the direct port binding from `php-app` and add Traefik labels instead. Traefik must be on a Docker network shared with this stack — adjust the network name to match your Traefik setup.

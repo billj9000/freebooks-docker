@@ -1,0 +1,27 @@
+# No build context needed — deploys the public phpmyadmin image directly.
+# Deploy with (run from the repo root, or anywhere):
+#
+#   fly deploy --config fly/pma.toml
+#
+# One-time setup before the first deploy:
+#   fly apps create <pma-app>
+#   fly certs add pma.your.domain.com -a <pma-app>
+#
+# Optional — only needed if you want a DB admin UI. Stateless, no volumes.
+
+app = "<pma-app>"
+primary_region = "lhr"
+
+[build]
+  image = "phpmyadmin"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+[env]
+  PMA_HOST = "<db-app>.internal"
+  PMA_PORT = "3306"

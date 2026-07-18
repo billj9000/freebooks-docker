@@ -1,0 +1,28 @@
+# No build context needed — deploys the public mariadb image directly.
+# Deploy with (run from the repo root, or anywhere):
+#
+#   fly deploy --config fly/db.toml
+#
+# One-time setup before the first deploy:
+#   fly apps create <db-app>
+#   fly volumes create mariadb_data --app <db-app> --region lhr --size 5
+#   fly secrets set -a <db-app> \
+#     MYSQL_ROOT_PASSWORD=<pick-one> \
+#     MYSQL_USER=freebooks \
+#     MYSQL_PASSWORD=<same-as-app's DB_PASSWORD>
+#
+# Not publicly exposed — reachable from other apps in this Fly org at
+# <db-app>.internal:3306.
+
+app = "<db-app>"
+primary_region = "lhr"
+
+[build]
+  image = "mariadb:11.4"
+
+[[mounts]]
+  source = "mariadb_data"
+  destination = "/var/lib/mysql"
+
+[env]
+  MYSQL_DATABASE = "freebooks"
