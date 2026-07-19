@@ -26,3 +26,9 @@ primary_region = "lhr"
 
 [env]
   MYSQL_DATABASE = "freebooks"
+
+# Matches docker-compose.yml's `mariadbd --sql_mode=""` — FreeBooks routinely writes
+# empty-string dates instead of NULL, which the stock strict-mode default rejects
+# (hit during the production/production_archive restore, 2026-07-19).
+[processes]
+  app = "mariadbd --sql_mode="
