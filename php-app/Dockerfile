@@ -27,6 +27,9 @@ RUN composer install --no-dev --no-interaction --optimize-autoloader
 
 # Set upload_tmp_dir explicitly so the installer's ini_get() check passes
 RUN echo "upload_tmp_dir = /tmp" > /usr/local/etc/php/conf.d/uploads.ini
+# Company backup restore accepts a single archive (SQL + files) up to 1GB;
+# post_max_size is padded above upload_max_filesize to cover multipart overhead
+RUN echo "upload_max_filesize = 1024M\npost_max_size = 1088M\nmemory_limit = 256M" > /usr/local/etc/php/conf.d/restore_uploads.ini
 # Phreeform report editor submits large forms; raise the input variable limit
 RUN echo "max_input_vars = 5000" > /usr/local/etc/php/conf.d/input_vars.ini
 # Ensure PHP errors are always logged and displayed regardless of runtime ini_set
