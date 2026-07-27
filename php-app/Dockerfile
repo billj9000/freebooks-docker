@@ -40,8 +40,10 @@ RUN echo "display_errors = Off\nerror_reporting = E_ALL & ~E_NOTICE\nlog_errors 
 RUN mkdir /var/www/html/config && \
     chown www-data:www-data /var/www/html/config && \
     ln -s /var/www/html/config/configure.php /var/www/html/includes/configure.php
-# Allow the web server to write into includes/ and my_files/
-RUN chown www-data:www-data includes/ my_files/
+# Allow the web server to write into includes/ and my_files/, plus TCPDF's image
+# cache (modules/ is otherwise root-owned — TCPDF fatals with "Can't open image
+# file" when it can't write a downloaded image into this directory)
+RUN chown www-data:www-data includes/ my_files/ modules/phreeform/includes/tcpdf/cache/
 # Stash pristine copies of config/ and my_files/ so a single volume can be
 # seeded with them on first boot on platforms that only support one volume
 # mount per instance (see entrypoint.sh) — Docker Compose doesn't need these,
