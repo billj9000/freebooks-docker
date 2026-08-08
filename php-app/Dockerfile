@@ -11,6 +11,17 @@ WORKDIR /var/www/html
 # Enable rewrite engine
 RUN a2enmod rewrite
 
+# Honour the application's per-directory .htaccess access controls. The base
+# php:apache image ships AllowOverride None, which silently ignores the
+# .htaccess files under my_files/, includes/, modules/ and themes/ that deny
+# direct HTTP access to PHP internals, database backups and company uploads.
+# It also enables directory indexing (Options Indexes), which would let anyone
+# browse and download the backup archives written to my_files/backups/.
+# Set AllowOverride All so those .htaccess rules take effect, and drop Indexes.
+RUN printf '<Directory /var/www/html/>\n    AllowOverride All\n    Options -Indexes +FollowSymLinks\n    Require all granted\n</Directory>\n' \
+      > /etc/apache2/conf-available/freebooks-hardening.conf \
+    && a2enconf freebooks-hardening
+
 # Copy the application code
 #COPY * .
 #COPY ckeditor/ ./ckeditor/
