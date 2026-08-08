@@ -1,5 +1,5 @@
 # Use the official PHP image
-FROM php:8.3-apache-bookworm
+FROM php:8.5-apache-bookworm
 
 # Install MySQL, zip, and bzip2 extensions
 RUN apt-get update && apt-get install -y libbz2-dev libzip-dev libpng-dev libjpeg-dev cron && rm -rf /var/lib/apt/lists/*
