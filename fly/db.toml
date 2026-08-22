@@ -27,8 +27,23 @@ primary_region = "lhr"
 [env]
   MYSQL_DATABASE = "freebooks"
 
-# Matches docker-compose.yml's `mariadbd --sql_mode=""` — FreeBooks routinely writes
-# empty-string dates instead of NULL, which the stock strict-mode default rejects
-# (hit during the production/production_archive restore, 2026-07-19).
+# DELIBERATELY NOT STRICT — and deliberately NOT the same as docker-compose.yml.
+#
+# FreeBooks writes '' where a NULL or a zero-date belongs, and a stock strict
+# server refuses the whole INSERT rather than coercing it (hit while restoring
+# the production and archive databases, 2026-07-19).
+#
+# The LOCAL docker database was switched TO strict on 2026-08-22, on purpose, to
+# find those write paths and fix them — three were found and fixed on the first
+# afternoon. Production stays lax until that trial has run its course and the
+# fixes are proven, because here a write path that has not been found yet fails
+# for a real user rather than for us.
+#
+# So the two configs differing is the POINT, not drift. Do NOT "sync" this line
+# to docker-compose.yml, however stale it looks beside it.
+#
+# Editing this line is the ONLY way production becomes strict: `fly deploy` from
+# php-app/ targets the <app> machine and never restarts or reconfigures
+# this one — the two are separate Fly apps with separate configs.
 [processes]
   app = "mariadbd --sql_mode="
