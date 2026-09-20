@@ -14,12 +14,18 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      # LOCAL ONLY, and only because this database is strict (see the db service
-      # below). db_perform() always LOGS an '' handed to a non-string column; with
-      # this set it also writes the column's default so the save proceeds, which
-      # is what keeps the strict trial usable. Production leaves it unset: there
-      # the server is lax and coercing would change what gets stored.
-      FB_EMPTY_COLUMN_COERCE: "1"
+      # NB FB_EMPTY_COLUMN_COERCE is deliberately NOT set here.
+      #
+      # FreeBooks logs it to my_files/empty_column_writes.log whenever it hands a
+      # blank value to a column that is not a string - a date or a number - which
+      # a database at its default settings refuses. Setting this variable would
+      # additionally write the column's own default so that the save proceeds.
+      #
+      # That is a developer's tool, not a setting to run an installation with: it
+      # quietly repairs the very writes worth knowing about, and it stores a value
+      # nobody asked for. If a save fails this way, the log names the table, the
+      # column and the line of code, and that is a bug to report rather than to
+      # paper over.
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

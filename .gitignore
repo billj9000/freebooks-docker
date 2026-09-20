@@ -7,3 +7,6 @@ php-app/*
 !php-app/cron/crontab
 !php-app/cron/entrypoint.sh
 php-app/cron/*.php
+
+# Development-only compose override (bind-mounts the working tree); never shipped.
+docker-compose.override.yml
