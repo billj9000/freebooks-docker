@@ -18,13 +18,8 @@ git clone https://github.com/billj9000/freebooks-docker
 cd freebooks-docker
 ```
 
-Clone the FreeBooks application source and copy it into place:
-
-```bash
-git clone https://github.com/billj9000/freebooks
-cp -r freebooks/trunk php-app
-rm -rf freebooks
-```
+The application itself is not in this repository. It is the published image
+`ghcr.io/billj9000/freebooks`, which Docker Compose downloads on first start.
 
 ### 2. Configure credentials
 
@@ -37,23 +32,26 @@ cp .env.example .env
 Edit `.env`:
 
 ```
+FREEBOOKS_VERSION=1.0
 DB_ROOT_PASSWORD=your_root_password
 DB_NAME=your_database_name
 DB_USER=your_database_user
 DB_PASSWORD=your_database_password
 ```
 
-### 3. Build and start
+`FREEBOOKS_VERSION` picks the release: an exact version such as `1.0.0`, a release line such as `1.0` (the newest `1.0.x`), or `edge` for the latest development build.
+
+### 3. Start
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 ### 4. Run the installer
 
 Navigate to http://localhost — on a fresh installation this redirects automatically to the installer. Database credentials are pre-configured from your `.env` file and do not need to be entered.
 
-Once installation is complete, the installer directory should be removed or protected — see [Post-install security](#post-install-security).
+Once FreeBooks is configured, the installer is closed automatically the next time the container starts — see [Post-install security](#post-install-security).
 
 ### 5. Log in
 
@@ -97,7 +95,7 @@ networks:
     external: true     # must already exist; created by your Traefik stack
 ```
 
-After installing FreeBooks, update `ENABLE_SSL_ADMIN` in `trunk/includes/configure.php` (inside the container volume) from `'false'` to `'true'`:
+After installing FreeBooks, update `ENABLE_SSL_ADMIN` in `config/configure.php` (in the `config` volume) from `'false'` to `'true'`:
 
 ```php
 define('ENABLE_SSL_ADMIN', 'true');
@@ -107,26 +105,41 @@ This tells FreeBooks to set the `Secure` flag on all cookies and to generate `ht
 
 ## Updating the application
 
-Pull the latest FreeBooks source and rebuild:
+Set `FREEBOOKS_VERSION` in `.env` to the release you want (or leave it on a release line such as `1.0` to take its newest version), then:
 
 ```bash
-git clone https://github.com/billj9000/freebooks
-cp -r freebooks/trunk php-app
-rm -rf freebooks
-docker compose up -d --build php-app
+docker compose pull php-app
+docker compose up -d php-app
 ```
 
-Database and company data are stored in Docker volumes and are preserved across rebuilds.
+Database and company data are stored in Docker volumes and are preserved across updates. Back them up before moving to a new release. The database is upgraded when an administrator next logs in to each company.
+
+## Adding optional modules
+
+The image contains the standard FreeBooks installation only. Optional modules, payment methods and shipping methods from the FreeBooks repository's `extensions/` directory are added by building a small image of your own on top of it. For example, with a checkout of the FreeBooks repository beside this one:
+
+```dockerfile
+# custom/Dockerfile
+FROM ghcr.io/billj9000/freebooks:1.0
+COPY extensions/Modules/work_orders/ /var/www/html/modules/work_orders/
+COPY extensions/ShippingMethods/ups/ /var/www/html/modules/shipping/methods/ups/
+```
+
+```bash
+docker build -f custom/Dockerfile -t freebooks-custom ../freebooks
+```
+
+Then set `image: freebooks-custom` for `php-app` in a `docker-compose.override.yml`. A copied-in module is installed per company from Company → Modules, as with any installation.
 
 ## Post-install security
 
-After completing installation, **remove the `install/` directory**. Leaving it accessible allows anyone to re-initialise the database.
-
-The installer will refuse to run if it detects the application is already configured, but the directory should still be removed:
+Once `configure.php` exists, the container denies all web access to `install/` every time it starts, so after the first restart following installation the installer is unreachable:
 
 ```bash
-docker compose exec php-app rm -rf /var/www/html/install
+docker compose restart php-app
 ```
+
+The installer also refuses to run on an application that is already configured.
 
 ## Troubleshooting
 

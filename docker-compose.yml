@@ -4,7 +4,10 @@ networks:
 
 services:
   php-app:
-    build: ./php-app  # Builds the PHP app Docker image from the ./php-app directory
+    # The published FreeBooks image. FREEBOOKS_VERSION in .env picks the release:
+    # an exact version (1.0.0), a release line (1.0) or edge (latest master).
+    image: ghcr.io/billj9000/freebooks:${FREEBOOKS_VERSION:-1.0}
+    restart: always
     ports:
       - "80:80"
     depends_on:
@@ -76,11 +79,5 @@ services:
 
 volumes:
   mariadb:
-    external: true
-    name: freebooks_mariadb  # existing data volume from previous project
   config:
-    external: true
-    name: freebooks_config   # existing configure.php volume
   my_files:
-    external: true
-    name: freebooks_my_files # existing company data volume
