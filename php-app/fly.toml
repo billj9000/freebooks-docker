@@ -1,19 +1,21 @@
 # Deploy from this directory (php-app/) so the Dockerfile's build context
 # picks up the application source:
 #
-#   fly deploy
+#   fly deploy --app <app>
+#
+# The app is named on each command rather than in this file: the names are
+# yours to choose, and Fly app names are unique across all of Fly.
 #
 # One-time setup before the first deploy:
 #   fly apps create <app>
 #   fly volumes create freebooks_data --app <app> --region lhr --size 6
-#   fly secrets set -a <app> DB_USER=freebooks DB_PASSWORD=<same-as-db-app>
+#   fly secrets set -a <app> DB_HOST=<db-app>.internal DB_USER=freebooks DB_PASSWORD=<same-as-db-app>
 #   fly certs add fb.your.domain.com -a <app>
 #
 # Fly Machines only support one volume mount per Machine, so config/ and
 # my_files/ share a single volume — entrypoint.sh seeds and symlinks them
 # into place on first boot.
 
-app = "<app>"
 primary_region = "lhr"
 
 [build]
@@ -30,5 +32,4 @@ primary_region = "lhr"
   destination = "/var/www/html/fly_data"
 
 [env]
-  DB_HOST = "<db-app>.internal"
   DB_NAME = "freebooks"

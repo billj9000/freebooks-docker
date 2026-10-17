@@ -1,6 +1,6 @@
 # Deploying to Fly.io
 
-This deploys FreeBooks as three separate Fly apps in the same organization, talking to each other over Fly's private networking:
+This deploys FreeBooks as three separate Fly apps in the same organization, talking to each other over Fly's private networking. Choose a name for each - Fly app names are unique across all of Fly - and use it wherever `<app>`, `<db-app>` and `<pma-app>` appear below. The `fly.toml` files do not name their app, so every command passes it.
 
 | App | Purpose | Public? |
 |---|---|---|
@@ -27,7 +27,7 @@ fly secrets set -a <db-app> \
   MYSQL_USER=freebooks \
   MYSQL_PASSWORD=<pick-one>
 
-fly deploy --config fly/db.toml
+fly deploy --config fly/db.toml --app <db-app>
 ```
 
 No build context needed — it deploys the public `mariadb:11.4` image directly, and is never exposed publicly.
@@ -39,10 +39,11 @@ cd php-app
 fly apps create <app>
 fly volumes create freebooks_data --app <app> --region lhr --size 6
 fly secrets set -a <app> \
+  DB_HOST=<db-app>.internal \
   DB_USER=freebooks \
   DB_PASSWORD=<same-as-db-app>
 
-fly deploy
+fly deploy --app <app>
 ```
 
 Must be run from `php-app/` so the Dockerfile's build context picks up the application source.
@@ -75,9 +76,10 @@ The second command sets the `Secure` flag on cookies now that you're on real HTT
 
 ```bash
 fly apps create <pma-app>
+fly secrets set -a <pma-app> PMA_HOST=<db-app>.internal
 fly certs add pma.your.domain.com -a <pma-app>
 
-fly deploy --config fly/pma.toml
+fly deploy --config fly/pma.toml --app <pma-app>
 ```
 
 Stateless, no volumes, and set to auto-stop when idle (`min_machines_running = 0` in `fly/pma.toml`) since it's admin-only tooling — worth doing for any Machine you don't need running 24/7, since Fly bills per-second while a Machine is up.
