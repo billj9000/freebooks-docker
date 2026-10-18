@@ -1,7 +1,6 @@
-# Deploy from this directory (php-app/) so the Dockerfile's build context
-# picks up the application source:
+# Runs the published FreeBooks image - there is nothing to build:
 #
-#   fly deploy --app <app>
+#   fly deploy --config fly/app.toml --app <app>
 #
 # The app is named on each command rather than in this file: the names are
 # yours to choose, and Fly app names are unique across all of Fly.
@@ -12,13 +11,18 @@
 #   fly secrets set -a <app> DB_HOST=<db-app>.internal DB_USER=freebooks DB_PASSWORD=<same-as-db-app>
 #   fly certs add fb.your.domain.com -a <app>
 #
+# To update, change the image tag below and deploy again. A release line such
+# as 1.0 takes its newest version on each deploy; an exact version such as
+# 1.0.0 stays put until you change it.
+#
 # Fly Machines only support one volume mount per Machine, so config/ and
-# my_files/ share a single volume — entrypoint.sh seeds and symlinks them
-# into place on first boot.
+# my_files/ share a single volume, mounted at fly_data/. The image's entrypoint
+# seeds it on first boot and links config/ and my_files/ into it.
 
 primary_region = "lhr"
 
 [build]
+  image = "ghcr.io/billj9000/freebooks:1.0"
 
 [http_service]
   internal_port = 80

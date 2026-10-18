@@ -1,12 +1,7 @@
 .env
-# Application source — copied from freebooks/trunk by the user (see README)
-php-app/*
-!php-app/Dockerfile
-!php-app/fly.toml
-!php-app/cron/
-!php-app/cron/crontab
-!php-app/cron/entrypoint.sh
-php-app/cron/*.php
+
+# A site's own image built on the published one (see FLY.md); not shared.
+fly/site/
 
 # Development-only compose override (bind-mounts the working tree); never shipped.
 docker-compose.override.yml

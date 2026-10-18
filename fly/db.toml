@@ -36,8 +36,8 @@ primary_region = "lhr"
 #
 # If a write is refused here, the fix is in the code, not in this line.
 #
-# Editing this line is the ONLY way to change production's sql_mode: `fly deploy`
-# from php-app/ targets the <app> machine and never restarts or
+# Editing this line is the ONLY way to change production's sql_mode: deploying
+# fly/app.toml targets the <app> machine and never restarts or
 # reconfigures this one - the two are separate Fly apps with separate configs.
 [processes]
   app = "mariadbd --sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"

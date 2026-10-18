@@ -67,7 +67,7 @@ After installation completes, navigate to http://localhost and log in with the a
 
 ## Deploying to Fly.io
 
-For a managed, container-native deployment with automatic HTTPS (no Traefik/reverse-proxy setup needed), see [FLY.md](FLY.md). It uses the `fly.toml` configs already in this repo (`php-app/fly.toml`, `fly/db.toml`, `fly/pma.toml`).
+For a managed, container-native deployment with automatic HTTPS (no Traefik/reverse-proxy setup needed), see [FLY.md](FLY.md). It runs the same published image, using the configurations in `fly/`.
 
 ## HTTPS with Traefik
 
