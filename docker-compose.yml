@@ -5,7 +5,7 @@ networks:
 services:
   php-app:
     # The published FreeBooks image. FREEBOOKS_VERSION in .env picks the release:
-    # an exact version (1.0.0), a release line (1.0) or edge (latest master).
+    # an exact version (1.0.1), a release line (1.0) or edge (latest master).
     image: ghcr.io/billj9000/freebooks:${FREEBOOKS_VERSION:-1.0}
     restart: always
     ports:

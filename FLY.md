@@ -90,7 +90,7 @@ The image tag in `fly/app.toml` picks the version:
 | Tag | Runs |
 |---|---|
 | `1.0` | The newest `1.0.x` release, taken on each deploy |
-| `1.0.0` | Exactly that release |
+| `1.0.1` | Exactly that release |
 | `sha-<commit>` | The build of one `master` commit, which never changes |
 | `edge` | The newest `master` build |
 
@@ -115,8 +115,8 @@ The image contains the standard FreeBooks installation only. Optional modules, s
 ```dockerfile
 # syntax=docker/dockerfile:1
 # fly/site/Dockerfile
-FROM ghcr.io/billj9000/freebooks:1.0.0
-ARG REPO=https://github.com/billj9000/freebooks.git#v1.0.0
+FROM ghcr.io/billj9000/freebooks:1.0.1
+ARG REPO=https://github.com/billj9000/freebooks.git#v1.0.1
 
 ADD ${REPO}:extensions/Modules/work_orders /var/www/html/modules/work_orders
 ADD ${REPO}:extensions/ShippingMethods/ups /var/www/html/modules/shipping/methods/ups

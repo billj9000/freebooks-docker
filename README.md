@@ -39,7 +39,7 @@ DB_USER=your_database_user
 DB_PASSWORD=your_database_password
 ```
 
-`FREEBOOKS_VERSION` picks the release: an exact version such as `1.0.0`, a release line such as `1.0` (the newest `1.0.x`), or `edge` for the latest development build.
+`FREEBOOKS_VERSION` picks the release: an exact version such as `1.0.1`, a release line such as `1.0` (the newest `1.0.x`), or `edge` for the latest development build.
 
 ### 3. Start
 

@@ -13,7 +13,7 @@
 #
 # To update, change the image tag below and deploy again. A release line such
 # as 1.0 takes its newest version on each deploy; an exact version such as
-# 1.0.0 stays put until you change it.
+# 1.0.1 stays put until you change it.
 #
 # Fly Machines only support one volume mount per Machine, so config/ and
 # my_files/ share a single volume, mounted at fly_data/. The image's entrypoint
